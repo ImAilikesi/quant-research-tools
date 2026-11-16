@@ -28,6 +28,13 @@ def run(capsys, *argv):
     ["splits", "--kind", "walk-forward", "--n", "60", "--folds", "3"],
     ["vol", EX / "synthetic_ohlc.csv", "--estimator", "parkinson"],
     ["fx-diversify", EX / "synthetic_fx.csv"],
+    ["mc-bands", EX / "synthetic_trades.csv", "--n-sims", "200", "--n-trades", "30"],
+    ["mc-bands", EX / "synthetic_trades.csv", "--n-sims", "50", "--mode", "shuffle"],
+    ["regimes", EX / "synthetic_returns.csv"],
+    ["rolling", EX / "synthetic_returns.csv", "--window", "40"],
+    ["tradelog", EX / "synthetic_trades.csv"],
+    ["minbtl", "--trials", "50", "--sharpe", "1.5"],
+    ["cluster", EX / "synthetic_strategies.csv", "--clusters", "2"],
 ])
 def test_every_cli_command_prints_json(capsys, argv):
     assert json.loads(run(capsys, *argv)) is not None

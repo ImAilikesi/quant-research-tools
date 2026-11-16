@@ -187,3 +187,14 @@ def drawdown_distribution(returns, horizon: int | None = None, n_sims: int = 500
     q = np.quantile(dd, [0.05, 0.5, 0.95, 0.99])
     return {"horizon": h, "n_sims": n_sims, "dd_q05": float(q[0]), "dd_median": float(q[1]),
             "dd_q95": float(q[2]), "dd_q99": float(q[3]), "samples": dd}
+
+
+def min_backtest_length(n_trials: int, target_sharpe: float) -> float:
+    """Minimum backtest length in years so the best of ``n_trials`` skill-less variants is unlikely
+    to reach ``target_sharpe`` (annualised) by chance. Bailey & Lopez de Prado: MinBTL ~ 2 ln(N) / SR^2.
+
+    Answers: how many years of data do I need before an annual Sharpe of X is believable after trying N configurations?
+    """
+    if n_trials < 2 or target_sharpe <= 0:
+        raise ValueError("need n_trials >= 2 and target_sharpe > 0")
+    return 2 * math.log(n_trials) / target_sharpe**2

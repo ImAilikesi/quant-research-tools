@@ -9,7 +9,22 @@ import sys
 import numpy as np
 import pandas as pd
 
-from . import _io, costs, fx, report, risk, robustness, sizing, validation, volatility
+from . import (
+    _io,
+    clustering,
+    costs,
+    fx,
+    montecarlo,
+    regimes,
+    report,
+    risk,
+    robustness,
+    rolling,
+    sizing,
+    tradelog,
+    validation,
+    volatility,
+)
 
 
 def _clean(o):
@@ -101,6 +116,40 @@ def cmd_fx(a):
     _out(res)
 
 
+def cmd_mcbands(a):
+    p = _trades(a)["pnl"].to_numpy()
+    paths = montecarlo.equity_paths(p, a.n_trades, a.n_sims, a.mode, a.start_equity, a.seed)
+    bands = montecarlo.confidence_bands(paths)
+    _out({**montecarlo.summarize_paths(paths, 0.0, a.dd_threshold),
+          "final_bands": {str(q): float(b[-1]) for q, b in bands.items()}})
+
+
+def cmd_regimes(a):
+    _out(regimes.regime_performance(_returns(a), a.window, a.bins, a.periods_per_year))
+
+
+def cmd_rolling(a):
+    r = _returns(a)
+    s, d, h = (rolling.rolling_sharpe(r, a.window), rolling.rolling_drawdown(r, a.window),
+               rolling.rolling_hit_rate(r, a.window))
+    _out({"window": a.window, "sharpe_min_med_max": [float(s.min()), float(s.median()), float(s.max())],
+          "worst_window_drawdown": float(d.max()), "hit_rate_min_max": [float(h.min()), float(h.max())]})
+
+
+def cmd_tradelog(a):
+    _out(tradelog.analyze(_trades(a)))
+
+
+def cmd_minbtl(a):
+    _out({"n_trials": a.trials, "target_sharpe": a.sharpe,
+          "min_backtest_years": robustness.min_backtest_length(a.trials, a.sharpe)})
+
+
+def cmd_cluster(a):
+    df = pd.read_csv(a.csv).select_dtypes("number")
+    _out(clustering.cluster(df, a.clusters))
+
+
 def cmd_tearsheet(a):
     html = report.build_tearsheet(_io.read_table(a.csv), a.title, a.periods_per_year, a.start_equity)
     with open(a.out, "w", encoding="utf-8") as f:
@@ -155,6 +204,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--window", type=int, default=20); s.add_argument("--periods-per-year", type=float, default=252)
     s = add("fx-diversify", cmd_fx, "FX diversification check; CSV = date index + pair price columns")
     s.add_argument("--numeraire", default="USD")
+    s = add("mc-bands", cmd_mcbands, "Monte Carlo equity paths from trades with confidence bands")
+    s.add_argument("--n-trades", type=int); s.add_argument("--n-sims", type=int, default=2000)
+    s.add_argument("--mode", choices=["bootstrap", "shuffle"], default="bootstrap")
+    s.add_argument("--dd-threshold", type=float, default=0.2)
+    s = add("regimes", cmd_regimes, "performance by trailing-volatility regime")
+    s.add_argument("--window", type=int, default=20); s.add_argument("--bins", type=int, default=3)
+    s.add_argument("--periods-per-year", type=float, default=252)
+    s = add("rolling", cmd_rolling, "rolling Sharpe / drawdown / hit-rate summary")
+    s.add_argument("--window", type=int, default=60)
+    add("tradelog", cmd_tradelog, "trade-log analysis: R-multiples, streaks, holding time, MAE/MFE")
+    s = add("minbtl", cmd_minbtl, "minimum backtest length (years)", csv=False)
+    s.add_argument("--trials", type=int, required=True); s.add_argument("--sharpe", type=float, required=True)
+    s = add("cluster", cmd_cluster, "correlation clustering; CSV columns = return streams")
+    s.add_argument("--clusters", type=int, default=3)
     s = add("tearsheet", cmd_tearsheet, "write an HTML tearsheet")
     s.add_argument("--out", default="tearsheet.html"); s.add_argument("--title", default="Tearsheet")
     s.add_argument("--periods-per-year", type=float, default=252)

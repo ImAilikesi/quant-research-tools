@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quanthygiene"
-version = "0.1.0"
+version = "0.2.0"
 description = "Research-hygiene toolkit for systematic trading: robustness tests, cost sensitivity, prop-firm risk simulation, sizing, validation splits, volatility estimators, FX diagnostics and HTML tearsheets."
 readme = "README.md"
 license = { text = "MIT" }
