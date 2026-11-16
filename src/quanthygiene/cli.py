@@ -23,6 +23,7 @@ from . import (
     sizing,
     tradelog,
     validation,
+    viz,
     volatility,
 )
 
@@ -150,6 +151,14 @@ def cmd_cluster(a):
     _out(clustering.cluster(df, a.clusters))
 
 
+def cmd_animate(a):
+    if a.kind == "fan":
+        path = viz.animate_fan(_trades(a)["pnl"].to_numpy(), a.out, seed=a.seed)
+    else:
+        path = viz.animate_overfitting(pd.read_csv(a.csv).select_dtypes("number").to_numpy(), a.out)
+    print(f"wrote {path}")
+
+
 def cmd_tearsheet(a):
     html = report.build_tearsheet(_io.read_table(a.csv), a.title, a.periods_per_year, a.start_equity)
     with open(a.out, "w", encoding="utf-8") as f:
@@ -218,6 +227,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--trials", type=int, required=True); s.add_argument("--sharpe", type=float, required=True)
     s = add("cluster", cmd_cluster, "correlation clustering; CSV columns = return streams")
     s.add_argument("--clusters", type=int, default=3)
+    s = add("animate", cmd_animate, "GIF: 'fan' (trades CSV) or 'overfit' (variants CSV)")
+    s.add_argument("kind", choices=["fan", "overfit"]); s.add_argument("--out", default="animation.gif")
     s = add("tearsheet", cmd_tearsheet, "write an HTML tearsheet")
     s.add_argument("--out", default="tearsheet.html"); s.add_argument("--title", default="Tearsheet")
     s.add_argument("--periods-per-year", type=float, default=252)
