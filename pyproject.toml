@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quanthygiene"
+version = "0.1.0"
+description = "Research-hygiene toolkit for systematic trading: robustness tests, cost sensitivity, prop-firm risk simulation, sizing, validation splits, volatility estimators, FX diagnostics and HTML tearsheets."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Aleksandr Shulga" }]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "pandas>=2.0", "matplotlib>=3.7"]
+keywords = ["quant", "backtesting", "monte-carlo", "deflated-sharpe", "overfitting", "risk"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff"]
+
+[project.scripts]
+quanthygiene = "quanthygiene.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E702", "E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/quanthygiene/cli.py" = ["E702"]
